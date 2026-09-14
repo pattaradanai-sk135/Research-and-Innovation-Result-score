@@ -110,6 +110,14 @@
   .cat-card .score-row{display:flex; align-items:baseline; gap:6px; margin-top:14px;}
   .cat-card .score-row .val{font-family:'Fraunces', serif; font-size:28px; font-weight:600; color:var(--blue-deep);}
   .cat-card .score-row .max{font-size:13px; color:var(--ink-soft);}
+
+  .filter-bar{display:flex; align-items:center; gap:10px; margin-bottom:20px;}
+  .filter-bar label{font-size:13px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace;}
+  .filter-bar select{
+    font-family:'IBM Plex Sans Thai', sans-serif; font-size:14px; color:var(--ink);
+    background:var(--card); border:1px solid var(--ink); padding:8px 14px;
+    cursor:pointer; min-width:260px;
+  }
   .bar-track{height:6px; background:var(--paper); border:1px solid var(--line); margin-top:12px; overflow:hidden;}
   .bar-fill{height:100%; background:var(--blue);}
 
@@ -188,6 +196,10 @@
 
   <section>
     <div class="section-head"><span class="idx">01</span><h2>คะแนนแยกตามหัวข้อ</h2></div>
+    <div class="filter-bar">
+      <label for="viewSelect">มุมมอง:</label>
+      <select id="viewSelect"></select>
+    </div>
     <div class="cat-grid" id="catGrid"></div>
     <div class="chart-panel">
       <canvas id="catChart"></canvas>
@@ -209,7 +221,7 @@
 
   <footer>
     <span>ดึงข้อมูลสดจากชีตที่เผยแพร่แบบสาธารณะทุกครั้งที่เปิดหน้านี้</span>
-    <span>คะแนนเต็มรวม 100</span>
+    <span>คะแนนเต็มต่อผลงาน 100 คะแนน</span>
   </footer>
 
 </div>
@@ -261,49 +273,30 @@ function rowToSubmission(row){
   };
 }
 
-function renderDashboard(SUBMISSIONS){
+function renderDashboard(ALL_SUBS){
   document.getElementById('loadingMsg').style.display = 'none';
 
   const MAXTOTAL = CATEGORIES.reduce((a,c)=>a+c.max,0);
-  const n = SUBMISSIONS.length;
-  const avgTotal = SUBMISSIONS.reduce((a,s)=>a+s.total,0)/n;
-  const maxSub = SUBMISSIONS.reduce((a,s)=>s.total>a.total?s:a, SUBMISSIONS[0]);
-  const minSub = SUBMISSIONS.reduce((a,s)=>s.total<a.total?s:a, SUBMISSIONS[0]);
 
-  document.getElementById('metaCount').textContent = n + ' ผลงาน';
-  document.getElementById('metaTime').textContent = SUBMISSIONS[SUBMISSIONS.length-1].timestamp;
-  document.getElementById('statCount').textContent = n;
-  document.getElementById('statMax').textContent = maxSub.total;
-  document.getElementById('statMin').textContent = minSub.total;
-  document.getElementById('heroProject').textContent = n === 1 ? SUBMISSIONS[0].project : (n + ' ผลงานที่ส่งเข้าประเมิน');
-
-  const pct = avgTotal / MAXTOTAL;
-  document.getElementById('heroNum').textContent = Math.round(avgTotal);
-  const circ = 2 * Math.PI * 80;
-  const arc = document.getElementById('heroArc');
-  arc.setAttribute('stroke-dasharray', circ);
-  arc.setAttribute('stroke-dashoffset', circ * (1 - pct));
-
-  function catScore(cat){
-    const total = SUBMISSIONS.reduce((sum,s)=> sum + cat.subs.reduce((a,sub)=>a+ (s.scores[sub.field]||0), 0), 0);
-    return total / n;
-  }
-
-  const catGrid = document.getElementById('catGrid');
-  CATEGORIES.forEach(cat=>{
-    const score = catScore(cat);
-    const pctFill = Math.round((score/cat.max)*100);
-    const div = document.createElement('div');
-    div.className = 'cat-card';
-    div.innerHTML = `
-      <div class="name">${cat.name}</div>
-      <div class="score-row"><span class="val">${score.toFixed(0)}</span></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${pctFill}%"></div></div>
-    `;
-    catGrid.appendChild(div);
+  // populate the view selector: combined, or one submission at a time
+  const viewSelect = document.getElementById('viewSelect');
+  viewSelect.innerHTML = '';
+  const optAll = document.createElement('option');
+  optAll.value = 'all';
+  optAll.textContent = `ภาพรวมทั้งหมด (รวม ${ALL_SUBS.length} ผลงาน)`;
+  viewSelect.appendChild(optAll);
+  ALL_SUBS.forEach((s,i)=>{
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = `${s.project} — ${s.email}`;
+    viewSelect.appendChild(opt);
   });
 
-  // simple inline plugin to draw the value at the end of each bar
+  function catScore(cat, subs){
+    return subs.reduce((sum,s)=> sum + cat.subs.reduce((a,sub)=>a+ (s.scores[sub.field]||0), 0), 0);
+  }
+
+  // simple inline plugin to draw the value at the end/top of each bar
   const valueLabelPlugin = {
     id: 'valueLabel',
     afterDatasetsDraw(chart){
@@ -318,11 +311,11 @@ function renderDashboard(SUBMISSIONS){
           if(chart.options.indexAxis === 'y'){
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-            ctx.fillText(value.toFixed(1), bar.x + 8, bar.y);
+            ctx.fillText(String(value), bar.x + 8, bar.y);
           } else {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
-            ctx.fillText(value.toFixed(1), bar.x, bar.y - 6);
+            ctx.fillText(String(value), bar.x, bar.y - 6);
           }
           ctx.restore();
         });
@@ -331,60 +324,110 @@ function renderDashboard(SUBMISSIONS){
   };
   Chart.register(valueLabelPlugin);
 
-  // category chart — only the achieved score, no full-score reference
-  new Chart(document.getElementById('catChart'), {
-    type:'bar',
-    data:{
-      labels: CATEGORIES.map(c=>c.name.length>28? c.name.slice(0,28)+'…' : c.name),
-      datasets:[
-        { label:'คะแนนที่ได้ (เฉลี่ย)', data: CATEGORIES.map(catScore), backgroundColor:'#2C5F8A', borderRadius:2, barPercentage:0.5 }
-      ]
-    },
-    options:{
-      responsive:true,
-      layout:{ padding:{ top:22 } },
-      plugins:{ legend:{display:false}, tooltip:{ titleFont:{family:"'IBM Plex Sans Thai'"}, bodyFont:{family:"'IBM Plex Sans Thai'"} } },
-      scales:{
-        x:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11}} },
-        y:{ beginAtZero:true, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}, stepSize:5} }
-      }
-    }
-  });
+  let catChartInstance = null;
+  let subChartInstance = null;
 
-  // sub-criteria chart — only achieved score, with a 0–10 scale for reference
-  const allSubs = CATEGORIES.flatMap(c=>c.subs.map(s=>({...s, cat:c.name})));
-  new Chart(document.getElementById('subChart'), {
-    type:'bar',
-    data:{
-      labels: allSubs.map(s=>s.name),
-      datasets:[{
-        label:'คะแนนที่ได้ (เฉลี่ย)',
-        data: allSubs.map(s=> SUBMISSIONS.reduce((a,sub)=>a+(sub.scores[s.field]||0),0)/n ),
-        backgroundColor:'#C98A3E',
-        borderRadius:2,
-        barPercentage:0.6
-      }]
-    },
-    options:{
-      indexAxis:'y',
-      responsive:true,
-      layout:{ padding:{ right:30 } },
-      plugins:{ legend:{display:false} },
-      scales:{
-        x:{ beginAtZero:true, max:10, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}, stepSize:2} },
-        y:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11.5}} }
-      }
-    }
-  });
+  function update(selection){
+    const subs = selection === 'all' ? ALL_SUBS : [ALL_SUBS[Number(selection)]];
+    const isAll = selection === 'all';
+    const totalMax = MAXTOTAL * subs.length;
+    const totalScore = subs.reduce((a,s)=>a+s.total,0);
 
-  // submissions list
+    // hero
+    document.getElementById('heroProject').textContent = isAll
+      ? `คะแนนรวมของทุกผลงาน (${subs.length} ผลงาน)`
+      : subs[0].project;
+    document.getElementById('heroNum').textContent = totalScore;
+    document.querySelector('.hero-score .lbl').textContent = isAll ? 'คะแนนรวมทุกผลงาน' : 'คะแนนรวม';
+    const pct = totalMax>0 ? totalScore/totalMax : 0;
+    const circ = 2 * Math.PI * 80;
+    const arc = document.getElementById('heroArc');
+    arc.setAttribute('stroke-dasharray', circ);
+    arc.setAttribute('stroke-dashoffset', circ * (1 - pct));
+
+    const maxSub = ALL_SUBS.reduce((a,s)=>s.total>a.total?s:a, ALL_SUBS[0]);
+    const minSub = ALL_SUBS.reduce((a,s)=>s.total<a.total?s:a, ALL_SUBS[0]);
+    document.getElementById('statCount').textContent = ALL_SUBS.length;
+    document.getElementById('statMax').textContent = maxSub.total;
+    document.getElementById('statMin').textContent = minSub.total;
+
+    // category cards
+    const catGrid = document.getElementById('catGrid');
+    catGrid.innerHTML = '';
+    CATEGORIES.forEach(cat=>{
+      const score = catScore(cat, subs);
+      const catMax = cat.max * subs.length;
+      const pctFill = catMax>0 ? Math.round((score/catMax)*100) : 0;
+      const div = document.createElement('div');
+      div.className = 'cat-card';
+      div.innerHTML = `
+        <div class="name">${cat.name}</div>
+        <div class="score-row"><span class="val">${score}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pctFill}%"></div></div>
+      `;
+      catGrid.appendChild(div);
+    });
+
+    // category chart
+    if(catChartInstance) catChartInstance.destroy();
+    catChartInstance = new Chart(document.getElementById('catChart'), {
+      type:'bar',
+      data:{
+        labels: CATEGORIES.map(c=>c.name.length>28? c.name.slice(0,28)+'…' : c.name),
+        datasets:[
+          { label:'คะแนนที่ได้', data: CATEGORIES.map(c=>catScore(c, subs)), backgroundColor:'#2C5F8A', borderRadius:2, barPercentage:0.5 }
+        ]
+      },
+      options:{
+        responsive:true,
+        layout:{ padding:{ top:22 } },
+        plugins:{ legend:{display:false}, tooltip:{ titleFont:{family:"'IBM Plex Sans Thai'"}, bodyFont:{family:"'IBM Plex Sans Thai'"} } },
+        scales:{
+          x:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11}} },
+          y:{ beginAtZero:true, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}} }
+        }
+      }
+    });
+
+    // sub-criteria chart
+    const allSubs = CATEGORIES.flatMap(c=>c.subs.map(s=>({...s, cat:c.name})));
+    if(subChartInstance) subChartInstance.destroy();
+    subChartInstance = new Chart(document.getElementById('subChart'), {
+      type:'bar',
+      data:{
+        labels: allSubs.map(s=>s.name),
+        datasets:[{
+          label:'คะแนนที่ได้',
+          data: allSubs.map(s=> subs.reduce((a,sub)=>a+(sub.scores[s.field]||0),0) ),
+          backgroundColor:'#C98A3E',
+          borderRadius:2,
+          barPercentage:0.6
+        }]
+      },
+      options:{
+        indexAxis:'y',
+        responsive:true,
+        layout:{ padding:{ right:30 } },
+        plugins:{ legend:{display:false} },
+        scales:{
+          x:{ beginAtZero:true, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}} },
+          y:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11.5}} }
+        }
+      }
+    });
+  }
+
+  viewSelect.addEventListener('change', e => update(e.target.value));
+  update('all');
+
+  // submissions list — always shown individually, with raw (unaveraged) scores
   const list = document.getElementById('submissionList');
-  SUBMISSIONS.forEach(s=>{
+  ALL_SUBS.forEach(s=>{
     const div = document.createElement('div');
     div.className = 'submission';
     const miniRows = CATEGORIES.map(cat=>{
       const val = cat.subs.reduce((a,sub)=>a+(s.scores[sub.field]||0),0);
-      return `<div class="mini-row"><span>${cat.name.slice(0,18)}…</span><span>${val}/${cat.max}</span></div>`;
+      return `<div class="mini-row"><span>${cat.name.slice(0,18)}…</span><span>${val}</span></div>`;
     }).join('');
     div.innerHTML = `
       <div class="submission-main">
@@ -395,7 +438,7 @@ function renderDashboard(SUBMISSIONS){
       </div>
       <div class="submission-side">
         <div class="total">${s.total}</div>
-        <div class="total-lbl">คะแนนรวม / 100</div>
+        <div class="total-lbl">คะแนนรวม</div>
         <div class="mini-breakdown">${miniRows}</div>
       </div>
     `;
