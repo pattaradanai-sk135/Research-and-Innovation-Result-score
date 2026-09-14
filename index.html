@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แดชบอร์ดคะแนนนวัตกรรม</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');
+
+  :root{
+    --paper:#F6F3EC;
+    --card:#FFFFFF;
+    --ink:#1B2430;
+    --ink-soft:#5B6472;
+    --line:#DCD5C7;
+    --blue:#2C5F8A;
+    --blue-deep:#1E4661;
+    --amber:#C98A3E;
+    --green:#4C7A5E;
+    --grid-w: 1120px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans Thai','IBM Plex Sans',sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 64px 64px;
+    opacity:0.35;
+    pointer-events:none;
+    z-index:0;
+  }
+  .wrap{position:relative; z-index:1; max-width:var(--grid-w); margin:0 auto; padding: 48px 28px 96px;}
+
+  h1,h2,h3{font-family:'Fraunces', serif; margin:0; letter-spacing:-0.01em;}
+
+  header.top{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    gap:24px; flex-wrap:wrap;
+    border-bottom:1.5px solid var(--ink);
+    padding-bottom:22px; margin-bottom:40px;
+  }
+  header.top .mark{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--blue-deep);
+    letter-spacing:0.02em;
+  }
+  header.top h1{font-size:34px; font-weight:600; color:var(--ink); margin-top:6px;}
+  header.top .sub{color:var(--ink-soft); font-size:15px; margin-top:6px; max-width:520px;}
+  header.top .meta{
+    text-align:right; font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink-soft);
+    line-height:1.7;
+  }
+  header.top .meta strong{color:var(--ink); font-weight:600;}
+
+  /* Hero score */
+  .hero{
+    display:grid; grid-template-columns: 260px 1fr; gap:0;
+    background:var(--card); border:1px solid var(--line); margin-bottom:44px;
+  }
+  .hero-score{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:32px 20px; border-right:1px solid var(--line);
+    position:relative;
+  }
+  .hero-score svg{width:190px; height:190px;}
+  .hero-score .num{
+    font-family:'Fraunces', serif; font-size:52px; font-weight:600; fill:var(--ink);
+  }
+  .hero-score .lbl{
+    margin-top:10px; font-size:13px; color:var(--ink-soft); text-align:center;
+  }
+  .hero-body{ padding:30px 34px; display:flex; flex-direction:column; justify-content:center; }
+  .hero-body h2{font-size:22px; font-weight:600;}
+  .hero-body p{color:var(--ink-soft); font-size:14.5px; margin:10px 0 0; max-width:640px;}
+  .hero-stats{display:flex; gap:36px; margin-top:22px; flex-wrap:wrap;}
+  .hero-stats div{}
+  .hero-stats .n{font-family:'Fraunces', serif; font-size:26px; font-weight:600; color:var(--blue-deep);}
+  .hero-stats .l{font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
+
+  section{margin-bottom:52px;}
+  .section-head{
+    display:flex; align-items:baseline; gap:14px; margin-bottom:22px;
+    border-bottom:1px solid var(--line); padding-bottom:12px;
+  }
+  .section-head .idx{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--amber); border:1px solid var(--amber);
+    padding:2px 7px;
+  }
+  .section-head h2{font-size:21px; font-weight:600;}
+
+  /* Category grid */
+  .cat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  @media (max-width:900px){ .cat-grid{grid-template-columns:repeat(2,1fr);} .hero{grid-template-columns:1fr;} .hero-score{border-right:none; border-bottom:1px solid var(--line);} }
+  @media (max-width:560px){ .cat-grid{grid-template-columns:1fr;} }
+
+  .cat-card{background:var(--card); border:1px solid var(--line); padding:20px;}
+  .cat-card .name{font-size:13.5px; font-weight:600; min-height:38px;}
+  .cat-card .score-row{display:flex; align-items:baseline; gap:6px; margin-top:14px;}
+  .cat-card .score-row .val{font-family:'Fraunces', serif; font-size:28px; font-weight:600; color:var(--blue-deep);}
+  .cat-card .score-row .max{font-size:13px; color:var(--ink-soft);}
+  .bar-track{height:6px; background:var(--paper); border:1px solid var(--line); margin-top:12px; overflow:hidden;}
+  .bar-fill{height:100%; background:var(--blue);}
+
+  .chart-panel{background:var(--card); border:1px solid var(--line); padding:26px; margin-top:20px;}
+  .chart-panel canvas{max-height:340px;}
+
+  /* Submissions */
+  .submission{
+    background:var(--card); border:1px solid var(--line); margin-bottom:18px;
+    display:grid; grid-template-columns: 1fr 200px; 
+  }
+  @media (max-width:760px){ .submission{grid-template-columns:1fr;} }
+  .submission-main{padding:26px 28px; border-right:1px solid var(--line);}
+  @media (max-width:760px){ .submission-main{border-right:none; border-bottom:1px solid var(--line);} }
+  .submission-main .proj{font-family:'Fraunces', serif; font-size:19px; font-weight:600;}
+  .submission-main .email{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft); margin-top:4px;}
+  .submission-main .feedback-lbl{
+    font-size:12px; color:var(--amber); margin-top:18px; font-weight:600;
+  }
+  .submission-main .feedback-text{
+    font-size:14.5px; margin-top:6px; color:var(--ink); line-height:1.65;
+  }
+  .submission-main .feedback-text.empty{ color:var(--ink-soft); font-style:italic; }
+  .submission-side{
+    padding:26px 28px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:linear-gradient(180deg, rgba(44,95,138,0.04), transparent);
+  }
+  .submission-side .total{font-family:'Fraunces', serif; font-size:40px; font-weight:600; color:var(--blue-deep);}
+  .submission-side .total-lbl{font-size:12px; color:var(--ink-soft); margin-top:4px;}
+  .submission-side .mini-breakdown{width:100%; margin-top:16px; display:flex; flex-direction:column; gap:6px;}
+  .submission-side .mini-row{display:flex; justify-content:space-between; font-size:11.5px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace;}
+
+  footer{
+    margin-top:60px; padding-top:20px; border-top:1px solid var(--line);
+    font-size:12px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="mark">คะแนนนวัตกรรม — URBAN EXCELLENCE</div>
+      <h1>แดชบอร์ดคะแนนนวัตกรรม</h1>
+      <div class="sub">สรุปคะแนนจากแบบประเมินผลงานนวัตกรรม แยกตามหัวข้อการให้คะแนนและข้อเสนอแนะรายผลงาน</div>
+    </div>
+    <div class="meta">
+      แหล่งข้อมูล: <strong>คะแนนนวัตกรรม (การตอบกลับ)</strong><br>
+      จำนวนผลงาน: <strong id="metaCount">-</strong><br>
+      อัปเดตข้อมูลล่าสุดในชีต: <strong id="metaTime">-</strong>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-score">
+      <svg viewBox="0 0 190 190">
+        <circle cx="95" cy="95" r="80" fill="none" stroke="#DCD5C7" stroke-width="14"/>
+        <circle id="heroArc" cx="95" cy="95" r="80" fill="none" stroke="#2C5F8A" stroke-width="14"
+          stroke-linecap="butt" transform="rotate(-90 95 95)"/>
+        <text x="95" y="100" text-anchor="middle" class="num" id="heroNum">-</text>
+      </svg>
+      <div class="lbl">คะแนนเฉลี่ยรวม (จาก 100)</div>
+    </div>
+    <div class="hero-body">
+      <h2 id="heroProject">-</h2>
+      <p id="heroDesc">ภาพรวมคะแนนของผลงานที่ส่งเข้าประเมิน พร้อมสัดส่วนคะแนนแต่ละหัวข้อเทียบกับคะแนนเต็ม</p>
+      <div class="hero-stats">
+        <div><div class="n" id="statCount">-</div><div class="l">ผลงานที่ประเมินแล้ว</div></div>
+        <div><div class="n" id="statMax">-</div><div class="l">คะแนนสูงสุด</div></div>
+        <div><div class="n" id="statMin">-</div><div class="l">คะแนนต่ำสุด</div></div>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-head"><span class="idx">01</span><h2>คะแนนแยกตามหัวข้อ</h2></div>
+    <div class="cat-grid" id="catGrid"></div>
+    <div class="chart-panel">
+      <canvas id="catChart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="idx">02</span><h2>รายละเอียดตามเกณฑ์ย่อย</h2></div>
+    <div class="chart-panel">
+      <canvas id="subChart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="idx">03</span><h2>คะแนนและข้อเสนอแนะรายผลงาน</h2></div>
+    <div id="loadingMsg" style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-soft);">กำลังโหลดข้อมูลจากชีต…</div>
+    <div id="submissionList"></div>
+  </section>
+
+  <footer>
+    <span>ดึงข้อมูลสดจากชีตที่เผยแพร่แบบสาธารณะทุกครั้งที่เปิดหน้านี้</span>
+    <span>คะแนนเต็มรวม 100</span>
+  </footer>
+
+</div>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTyd30y2diczXigFWRIToeLibIuVzdkDRpDWCo0BtBgmIr9afnVilDrqNgGltDTJMoMKUh4hchpexAY/pub?output=csv";
+
+// ---- Category / rubric structure ----
+const CATEGORIES = [
+  { key:'c1', name:'คุณภาพและความถูกต้องของระเบียบวิธีวิจัย รวมถึงความเป็นนวัตกรรม', max:40,
+    subs:[
+      {name:'มีต้นแบบที่ใช้งานได้จริง', max:10, field:'d'},
+      {name:'มีการทดลองใช้กับกลุ่มเป้าหมาย', max:10, field:'e'},
+      {name:'คุณภาพของผลการทดลองใช้', max:10, field:'f'},
+      {name:'ความใหม่ / ความคิดสร้างสรรค์', max:10, field:'g'},
+    ]},
+  { key:'c2', name:'ความสอดคล้องกับยุทธศาสตร์ Urban Excellence', max:30,
+    subs:[
+      {name:'ความเป็นไปได้ในการขยายผล (Scalability)', max:10, field:'h'},
+      {name:'มีแผนพัฒนาต่อยอด (Roadmap)', max:10, field:'i'},
+      {name:'ตอบโจทย์ปัญหาคนเมือง', max:10, field:'j'},
+    ]},
+  { key:'c3', name:'ความชัดเจนในการนำเสนอและการตอบคำถาม', max:20,
+    subs:[
+      {name:'อธิบายหลักการและข้อจำกัดได้ชัดเจน', max:10, field:'k'},
+      {name:'ตอบคำถามอย่างมีเหตุผล', max:10, field:'l'},
+    ]},
+  { key:'c4', name:'คุณภาพของสื่อนำเสนอและ Abstract', max:10,
+    subs:[
+      {name:'สื่อนำเสนอและบทคัดย่อ', max:10, field:'m'},
+    ]},
+];
+
+// column order in the sheet: timestamp,email,project, d..m (10 score cols), feedback, total
+const FIELD_ORDER = ['d','e','f','g','h','i','j','k','l','m'];
+
+function rowToSubmission(row){
+  // row: array of cell strings, index 0..14
+  const scores = {};
+  FIELD_ORDER.forEach((f,i)=>{ scores[f] = parseFloat(row[3+i]) || 0; });
+  const total = parseFloat(row[14]);
+  return {
+    timestamp: (row[0]||'').trim(),
+    email: (row[1]||'').trim(),
+    project: (row[2]||'').trim(),
+    scores,
+    feedback: (row[13]||'').trim(),
+    total: isNaN(total) ? Object.values(scores).reduce((a,b)=>a+b,0) : total
+  };
+}
+
+function renderDashboard(SUBMISSIONS){
+  document.getElementById('loadingMsg').style.display = 'none';
+
+  const MAXTOTAL = CATEGORIES.reduce((a,c)=>a+c.max,0);
+  const n = SUBMISSIONS.length;
+  const avgTotal = SUBMISSIONS.reduce((a,s)=>a+s.total,0)/n;
+  const maxSub = SUBMISSIONS.reduce((a,s)=>s.total>a.total?s:a, SUBMISSIONS[0]);
+  const minSub = SUBMISSIONS.reduce((a,s)=>s.total<a.total?s:a, SUBMISSIONS[0]);
+
+  document.getElementById('metaCount').textContent = n + ' ผลงาน';
+  document.getElementById('metaTime').textContent = SUBMISSIONS[SUBMISSIONS.length-1].timestamp;
+  document.getElementById('statCount').textContent = n;
+  document.getElementById('statMax').textContent = maxSub.total;
+  document.getElementById('statMin').textContent = minSub.total;
+  document.getElementById('heroProject').textContent = n === 1 ? SUBMISSIONS[0].project : (n + ' ผลงานที่ส่งเข้าประเมิน');
+
+  const pct = avgTotal / MAXTOTAL;
+  document.getElementById('heroNum').textContent = Math.round(avgTotal);
+  const circ = 2 * Math.PI * 80;
+  const arc = document.getElementById('heroArc');
+  arc.setAttribute('stroke-dasharray', circ);
+  arc.setAttribute('stroke-dashoffset', circ * (1 - pct));
+
+  function catScore(cat){
+    const total = SUBMISSIONS.reduce((sum,s)=> sum + cat.subs.reduce((a,sub)=>a+ (s.scores[sub.field]||0), 0), 0);
+    return total / n;
+  }
+
+  const catGrid = document.getElementById('catGrid');
+  CATEGORIES.forEach(cat=>{
+    const score = catScore(cat);
+    const pctFill = Math.round((score/cat.max)*100);
+    const div = document.createElement('div');
+    div.className = 'cat-card';
+    div.innerHTML = `
+      <div class="name">${cat.name}</div>
+      <div class="score-row"><span class="val">${score.toFixed(0)}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pctFill}%"></div></div>
+    `;
+    catGrid.appendChild(div);
+  });
+
+  // simple inline plugin to draw the value at the end of each bar
+  const valueLabelPlugin = {
+    id: 'valueLabel',
+    afterDatasetsDraw(chart){
+      const {ctx} = chart;
+      chart.data.datasets.forEach((dataset, di)=>{
+        const meta = chart.getDatasetMeta(di);
+        meta.data.forEach((bar, i)=>{
+          const value = dataset.data[i];
+          ctx.save();
+          ctx.fillStyle = '#1B2430';
+          ctx.font = "600 12px 'IBM Plex Mono', monospace";
+          if(chart.options.indexAxis === 'y'){
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(value.toFixed(1), bar.x + 8, bar.y);
+          } else {
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(value.toFixed(1), bar.x, bar.y - 6);
+          }
+          ctx.restore();
+        });
+      });
+    }
+  };
+  Chart.register(valueLabelPlugin);
+
+  // category chart — only the achieved score, no full-score reference
+  new Chart(document.getElementById('catChart'), {
+    type:'bar',
+    data:{
+      labels: CATEGORIES.map(c=>c.name.length>28? c.name.slice(0,28)+'…' : c.name),
+      datasets:[
+        { label:'คะแนนที่ได้ (เฉลี่ย)', data: CATEGORIES.map(catScore), backgroundColor:'#2C5F8A', borderRadius:2, barPercentage:0.5 }
+      ]
+    },
+    options:{
+      responsive:true,
+      layout:{ padding:{ top:22 } },
+      plugins:{ legend:{display:false}, tooltip:{ titleFont:{family:"'IBM Plex Sans Thai'"}, bodyFont:{family:"'IBM Plex Sans Thai'"} } },
+      scales:{
+        x:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11}} },
+        y:{ beginAtZero:true, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}, stepSize:5} }
+      }
+    }
+  });
+
+  // sub-criteria chart — only achieved score, with a 0–10 scale for reference
+  const allSubs = CATEGORIES.flatMap(c=>c.subs.map(s=>({...s, cat:c.name})));
+  new Chart(document.getElementById('subChart'), {
+    type:'bar',
+    data:{
+      labels: allSubs.map(s=>s.name),
+      datasets:[{
+        label:'คะแนนที่ได้ (เฉลี่ย)',
+        data: allSubs.map(s=> SUBMISSIONS.reduce((a,sub)=>a+(sub.scores[s.field]||0),0)/n ),
+        backgroundColor:'#C98A3E',
+        borderRadius:2,
+        barPercentage:0.6
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      layout:{ padding:{ right:30 } },
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ beginAtZero:true, max:10, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}, stepSize:2} },
+        y:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11.5}} }
+      }
+    }
+  });
+
+  // submissions list
+  const list = document.getElementById('submissionList');
+  SUBMISSIONS.forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'submission';
+    const miniRows = CATEGORIES.map(cat=>{
+      const val = cat.subs.reduce((a,sub)=>a+(s.scores[sub.field]||0),0);
+      return `<div class="mini-row"><span>${cat.name.slice(0,18)}…</span><span>${val}/${cat.max}</span></div>`;
+    }).join('');
+    div.innerHTML = `
+      <div class="submission-main">
+        <div class="proj">${s.project}</div>
+        <div class="email">${s.email} · ${s.timestamp}</div>
+        <div class="feedback-lbl">ข้อเสนอแนะ</div>
+        <div class="feedback-text ${s.feedback ? '' : 'empty'}">${s.feedback ? s.feedback : 'ไม่มีข้อเสนอแนะเพิ่มเติมจากผู้ประเมิน'}</div>
+      </div>
+      <div class="submission-side">
+        <div class="total">${s.total}</div>
+        <div class="total-lbl">คะแนนรวม / 100</div>
+        <div class="mini-breakdown">${miniRows}</div>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ---- Load live data from the published sheet CSV ----
+fetch(CSV_URL)
+  .then(r=>{ if(!r.ok) throw new Error('fetch failed'); return r.text(); })
+  .then(csvText=>{
+    const parsed = Papa.parse(csvText.trim(), { skipEmptyLines:true }).data;
+    const rows = parsed.slice(1).filter(r => r[1] && r[1].trim()); // skip header, require email present
+    const submissions = rows.map(rowToSubmission);
+    if(submissions.length === 0) throw new Error('no rows');
+    renderDashboard(submissions);
+  })
+  .catch(err=>{
+    document.getElementById('loadingMsg').textContent = 'โหลดข้อมูลสดจากชีตไม่สำเร็จ กำลังแสดงข้อมูลชุดล่าสุดที่บันทึกไว้แทน';
+    renderDashboard([
+      rowToSubmission(['14/9/2026, 10:12:48','waraporn.yah@nmu.ac.th','อุปกรณ์ประคบร้อนด้วยไฟฟ้า','7','7','7','7','7','7','7','8','8','8','','73'])
+    ]);
+  });
+</script>
+</body>
+</html>
