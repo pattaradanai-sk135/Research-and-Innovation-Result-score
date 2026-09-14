@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>แดชบอร์ดคะแนนนวัตกรรม</title>
+<title>แดชบอร์ดคะแนนการประเมิน</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
@@ -50,19 +50,31 @@
     display:flex; justify-content:space-between; align-items:flex-end;
     gap:24px; flex-wrap:wrap;
     border-bottom:1.5px solid var(--ink);
-    padding-bottom:22px; margin-bottom:40px;
+    padding-bottom:22px; margin-bottom:28px;
   }
   header.top .mark{
     font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--blue-deep);
     letter-spacing:0.02em;
   }
   header.top h1{font-size:34px; font-weight:600; color:var(--ink); margin-top:6px;}
-  header.top .sub{color:var(--ink-soft); font-size:15px; margin-top:6px; max-width:520px;}
+  header.top .sub{color:var(--ink-soft); font-size:15px; margin-top:6px; max-width:560px;}
   header.top .meta{
     text-align:right; font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink-soft);
     line-height:1.7;
   }
   header.top .meta strong{color:var(--ink); font-weight:600;}
+
+  .filter-bar{
+    display:flex; align-items:center; gap:28px; flex-wrap:wrap;
+    background:var(--card); border:1px solid var(--line); padding:16px 22px; margin-bottom:36px;
+  }
+  .filter-group{display:flex; align-items:center; gap:10px;}
+  .filter-group label{font-size:12.5px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace;}
+  .filter-group select{
+    font-family:'IBM Plex Sans Thai', sans-serif; font-size:14px; color:var(--ink);
+    background:var(--paper); border:1px solid var(--ink); padding:8px 14px;
+    cursor:pointer; min-width:260px;
+  }
 
   /* Hero score */
   .hero{
@@ -76,16 +88,15 @@
   }
   .hero-score svg{width:190px; height:190px;}
   .hero-score .num{
-    font-family:'Fraunces', serif; font-size:52px; font-weight:600; fill:var(--ink);
+    font-family:'Fraunces', serif; font-size:48px; font-weight:600; fill:var(--ink);
   }
   .hero-score .lbl{
     margin-top:10px; font-size:13px; color:var(--ink-soft); text-align:center;
   }
   .hero-body{ padding:30px 34px; display:flex; flex-direction:column; justify-content:center; }
-  .hero-body h2{font-size:22px; font-weight:600;}
+  .hero-body h2{font-size:20px; font-weight:600; line-height:1.35;}
   .hero-body p{color:var(--ink-soft); font-size:14.5px; margin:10px 0 0; max-width:640px;}
   .hero-stats{display:flex; gap:36px; margin-top:22px; flex-wrap:wrap;}
-  .hero-stats div{}
   .hero-stats .n{font-family:'Fraunces', serif; font-size:26px; font-weight:600; color:var(--blue-deep);}
   .hero-stats .l{font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
 
@@ -106,33 +117,24 @@
   @media (max-width:560px){ .cat-grid{grid-template-columns:1fr;} }
 
   .cat-card{background:var(--card); border:1px solid var(--line); padding:20px;}
-  .cat-card .name{font-size:13.5px; font-weight:600; min-height:38px;}
+  .cat-card .name{font-size:13px; font-weight:600; min-height:38px;}
   .cat-card .score-row{display:flex; align-items:baseline; gap:6px; margin-top:14px;}
   .cat-card .score-row .val{font-family:'Fraunces', serif; font-size:28px; font-weight:600; color:var(--blue-deep);}
-  .cat-card .score-row .max{font-size:13px; color:var(--ink-soft);}
-
-  .filter-bar{display:flex; align-items:center; gap:10px; margin-bottom:20px;}
-  .filter-bar label{font-size:13px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace;}
-  .filter-bar select{
-    font-family:'IBM Plex Sans Thai', sans-serif; font-size:14px; color:var(--ink);
-    background:var(--card); border:1px solid var(--ink); padding:8px 14px;
-    cursor:pointer; min-width:260px;
-  }
   .bar-track{height:6px; background:var(--paper); border:1px solid var(--line); margin-top:12px; overflow:hidden;}
   .bar-fill{height:100%; background:var(--blue);}
 
   .chart-panel{background:var(--card); border:1px solid var(--line); padding:26px; margin-top:20px;}
-  .chart-panel canvas{max-height:340px;}
+  .chart-panel canvas{max-height:360px;}
 
   /* Submissions */
   .submission{
     background:var(--card); border:1px solid var(--line); margin-bottom:18px;
-    display:grid; grid-template-columns: 1fr 200px; 
+    display:grid; grid-template-columns: 1fr 200px;
   }
   @media (max-width:760px){ .submission{grid-template-columns:1fr;} }
   .submission-main{padding:26px 28px; border-right:1px solid var(--line);}
   @media (max-width:760px){ .submission-main{border-right:none; border-bottom:1px solid var(--line);} }
-  .submission-main .proj{font-family:'Fraunces', serif; font-size:19px; font-weight:600;}
+  .submission-main .proj{font-family:'Fraunces', serif; font-size:18px; font-weight:600; line-height:1.4;}
   .submission-main .email{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft); margin-top:4px;}
   .submission-main .feedback-lbl{
     font-size:12px; color:var(--amber); margin-top:18px; font-weight:600;
@@ -148,7 +150,10 @@
   .submission-side .total{font-family:'Fraunces', serif; font-size:40px; font-weight:600; color:var(--blue-deep);}
   .submission-side .total-lbl{font-size:12px; color:var(--ink-soft); margin-top:4px;}
   .submission-side .mini-breakdown{width:100%; margin-top:16px; display:flex; flex-direction:column; gap:6px;}
-  .submission-side .mini-row{display:flex; justify-content:space-between; font-size:11.5px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace;}
+  .submission-side .mini-row{display:flex; justify-content:space-between; gap:8px; font-size:11.5px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace;}
+  .submission-side .mini-row span:first-child{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+  .status-msg{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-soft); margin-bottom:16px;}
 
   footer{
     margin-top:60px; padding-top:20px; border-top:1px solid var(--line);
@@ -162,16 +167,29 @@
 
   <header class="top">
     <div>
-      <div class="mark">คะแนนนวัตกรรม — URBAN EXCELLENCE</div>
-      <h1>แดชบอร์ดคะแนนนวัตกรรม</h1>
-      <div class="sub">สรุปคะแนนจากแบบประเมินผลงานนวัตกรรม แยกตามหัวข้อการให้คะแนนและข้อเสนอแนะรายผลงาน</div>
+      <div class="mark">การประเมินผลงาน — URBAN EXCELLENCE</div>
+      <h1>แดชบอร์ดคะแนนการประเมิน</h1>
+      <div class="sub">รวมผลคะแนนจากหลายแบบประเมิน เลือกชุดคะแนนและมุมมองที่ต้องการดูได้ด้านล่าง</div>
     </div>
     <div class="meta">
-      แหล่งข้อมูล: <strong>คะแนนนวัตกรรม (การตอบกลับ)</strong><br>
-      จำนวนผลงาน: <strong id="metaCount">-</strong><br>
-      อัปเดตข้อมูลล่าสุดในชีต: <strong id="metaTime">-</strong>
+      จำนวนชุดคะแนนทั้งหมด: <strong id="metaSheetCount">-</strong><br>
+      ผลงานในชุดที่เลือก: <strong id="metaCount">-</strong><br>
+      อัปเดตล่าสุดในชีต: <strong id="metaTime">-</strong>
     </div>
   </header>
+
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label for="sheetSelect">ชุดคะแนน:</label>
+      <select id="sheetSelect"></select>
+    </div>
+    <div class="filter-group">
+      <label for="viewSelect">มุมมอง:</label>
+      <select id="viewSelect"></select>
+    </div>
+  </div>
+
+  <div id="statusMsg" class="status-msg">กำลังโหลดข้อมูลจากชีตทั้งหมด…</div>
 
   <div class="hero">
     <div class="hero-score">
@@ -181,13 +199,13 @@
           stroke-linecap="butt" transform="rotate(-90 95 95)"/>
         <text x="95" y="100" text-anchor="middle" class="num" id="heroNum">-</text>
       </svg>
-      <div class="lbl">คะแนนเฉลี่ยรวม (จาก 100)</div>
+      <div class="lbl" id="heroLbl">คะแนนรวม</div>
     </div>
     <div class="hero-body">
       <h2 id="heroProject">-</h2>
-      <p id="heroDesc">ภาพรวมคะแนนของผลงานที่ส่งเข้าประเมิน พร้อมสัดส่วนคะแนนแต่ละหัวข้อเทียบกับคะแนนเต็ม</p>
+      <p id="heroDesc">ภาพรวมคะแนนของผลงานที่ส่งเข้าประเมินในชุดคะแนนที่เลือก</p>
       <div class="hero-stats">
-        <div><div class="n" id="statCount">-</div><div class="l">ผลงานที่ประเมินแล้ว</div></div>
+        <div><div class="n" id="statCount">-</div><div class="l">ผลงานในชุดนี้</div></div>
         <div><div class="n" id="statMax">-</div><div class="l">คะแนนสูงสุด</div></div>
         <div><div class="n" id="statMin">-</div><div class="l">คะแนนต่ำสุด</div></div>
       </div>
@@ -196,10 +214,6 @@
 
   <section>
     <div class="section-head"><span class="idx">01</span><h2>คะแนนแยกตามหัวข้อ</h2></div>
-    <div class="filter-bar">
-      <label for="viewSelect">มุมมอง:</label>
-      <select id="viewSelect"></select>
-    </div>
     <div class="cat-grid" id="catGrid"></div>
     <div class="chart-panel">
       <canvas id="catChart"></canvas>
@@ -215,219 +229,210 @@
 
   <section>
     <div class="section-head"><span class="idx">03</span><h2>คะแนนและข้อเสนอแนะรายผลงาน</h2></div>
-    <div id="loadingMsg" style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-soft);">กำลังโหลดข้อมูลจากชีต…</div>
     <div id="submissionList"></div>
   </section>
 
   <footer>
-    <span>ดึงข้อมูลสดจากชีตที่เผยแพร่แบบสาธารณะทุกครั้งที่เปิดหน้านี้</span>
-    <span>คะแนนเต็มต่อผลงาน 100 คะแนน</span>
+    <span>ดึงข้อมูลสดจากทุกชีตที่เผยแพร่แบบสาธารณะทุกครั้งที่เปิดหน้านี้</span>
+    <span id="footerNote">คะแนนเต็มขึ้นอยู่กับแต่ละชุดคะแนน</span>
   </footer>
 
 </div>
 
 <script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTyd30y2diczXigFWRIToeLibIuVzdkDRpDWCo0BtBgmIr9afnVilDrqNgGltDTJMoMKUh4hchpexAY/pub?output=csv";
-
-// ---- Category / rubric structure ----
-const CATEGORIES = [
-  { key:'c1', name:'คุณภาพและความถูกต้องของระเบียบวิธีวิจัย รวมถึงความเป็นนวัตกรรม', max:40,
-    subs:[
-      {name:'มีต้นแบบที่ใช้งานได้จริง', max:10, field:'d'},
-      {name:'มีการทดลองใช้กับกลุ่มเป้าหมาย', max:10, field:'e'},
-      {name:'คุณภาพของผลการทดลองใช้', max:10, field:'f'},
-      {name:'ความใหม่ / ความคิดสร้างสรรค์', max:10, field:'g'},
-    ]},
-  { key:'c2', name:'ความสอดคล้องกับยุทธศาสตร์ Urban Excellence', max:30,
-    subs:[
-      {name:'ความเป็นไปได้ในการขยายผล (Scalability)', max:10, field:'h'},
-      {name:'มีแผนพัฒนาต่อยอด (Roadmap)', max:10, field:'i'},
-      {name:'ตอบโจทย์ปัญหาคนเมือง', max:10, field:'j'},
-    ]},
-  { key:'c3', name:'ความชัดเจนในการนำเสนอและการตอบคำถาม', max:20,
-    subs:[
-      {name:'อธิบายหลักการและข้อจำกัดได้ชัดเจน', max:10, field:'k'},
-      {name:'ตอบคำถามอย่างมีเหตุผล', max:10, field:'l'},
-    ]},
-  { key:'c4', name:'คุณภาพของสื่อนำเสนอและ Abstract', max:10,
-    subs:[
-      {name:'สื่อนำเสนอและบทคัดย่อ', max:10, field:'m'},
-    ]},
+// ---- Sources: every published-CSV sheet to combine on this page ----
+const SHEET_SOURCES = [
+  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTyd30y2diczXigFWRIToeLibIuVzdkDRpDWCo0BtBgmIr9afnVilDrqNgGltDTJMoMKUh4hchpexAY/pub?output=csv" },
+  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOgYBQm3v8ypjtnL7_uB8whaefyA_H_7YAZyNvfoM0V0rGXpCCJcWi0R6kdIZzLY0nKYI74wsJW9bt/pub?output=csv" },
+  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ34ZLev-CSpRyCe6ycnIjOq_ipXEp5sQwGxBkrn-_FcDKnBNNRIngcpO75bgHfktWTmg5Y7Gmzbjw7/pub?output=csv" },
+  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRccbUmPjZEwGdDBz6jgYiBvbYvCt3D3JXISQscseuzd96q7bOOt8fAlnjNRKnxf1DfbkY4eaeacGp0/pub?output=csv" },
 ];
 
-// column order in the sheet: timestamp,email,project, d..m (10 score cols), feedback, total
-const FIELD_ORDER = ['d','e','f','g','h','i','j','k','l','m'];
+// ---- Generic CSV -> rubric parser (works for any "หัวข้อ (X คะแนน) [ย่อย (Y คะแนน)]" header shape) ----
+function parseSheetCsv(csvText){
+  const rows = Papa.parse(csvText.trim(), { skipEmptyLines:true }).data;
+  const header = rows[0];
+  const dataRows = rows.slice(1).filter(r => r[1] && r[1].trim());
 
-function rowToSubmission(row){
-  // row: array of cell strings, index 0..14
-  const scores = {};
-  FIELD_ORDER.forEach((f,i)=>{ scores[f] = parseFloat(row[3+i]) || 0; });
-  const total = parseFloat(row[14]);
-  return {
-    timestamp: (row[0]||'').trim(),
-    email: (row[1]||'').trim(),
-    project: (row[2]||'').trim(),
-    scores,
-    feedback: (row[13]||'').trim(),
-    total: isNaN(total) ? Object.values(scores).reduce((a,b)=>a+b,0) : total
-  };
-}
+  const catMap = {};
+  const catOrder = [];
+  const headerRe = /^(.*?)\s*\((\d+)\s*คะแนน\)\s*\[(.*?)\s*\((\d+)\s*คะแนน\)\]/s;
 
-function renderDashboard(ALL_SUBS){
-  document.getElementById('loadingMsg').style.display = 'none';
+  header.forEach((h, idx)=>{
+    const clean = (h||'').replace(/\s+/g,' ').trim();
+    const m = clean.match(headerRe);
+    if(m){
+      const mainName = m[1].trim();
+      const mainMax = parseInt(m[2]);
+      const subName = m[3].trim();
+      const subMax = parseInt(m[4]);
+      if(!catMap[mainName]){ catMap[mainName] = { name: mainName, max: mainMax, subs: [] }; catOrder.push(mainName); }
+      catMap[mainName].subs.push({ name: subName, max: subMax, colIndex: idx });
+    }
+  });
+  const categories = catOrder.map(name => catMap[name]);
 
-  const MAXTOTAL = CATEGORIES.reduce((a,c)=>a+c.max,0);
+  const feedbackIdx = header.findIndex(h => (h||'').trim() === 'ข้อเสนอแนะ');
+  const totalIdx = header.findIndex(h => (h||'').trim() === 'คะแนนรวม');
+  const projectHeaderRaw = (header[2] || 'ผลงาน').trim();
 
-  // populate the view selector: combined, or one submission at a time
-  const viewSelect = document.getElementById('viewSelect');
-  viewSelect.innerHTML = '';
-  const optAll = document.createElement('option');
-  optAll.value = 'all';
-  optAll.textContent = `ภาพรวมทั้งหมด (รวม ${ALL_SUBS.length} ผลงาน)`;
-  viewSelect.appendChild(optAll);
-  ALL_SUBS.forEach((s,i)=>{
-    const opt = document.createElement('option');
-    opt.value = String(i);
-    opt.textContent = `${s.project} — ${s.email}`;
-    viewSelect.appendChild(opt);
+  const submissions = dataRows.map(row=>{
+    const scores = {};
+    categories.forEach(cat => cat.subs.forEach(sub=>{ scores[sub.colIndex] = parseFloat(row[sub.colIndex]) || 0; }));
+    const total = parseFloat(row[totalIdx]);
+    return {
+      timestamp: (row[0]||'').trim(),
+      email: (row[1]||'').trim(),
+      project: (row[2]||'').trim(),
+      scores,
+      feedback: (row[feedbackIdx]||'').trim(),
+      total: isNaN(total) ? Object.values(scores).reduce((a,b)=>a+b,0) : total
+    };
   });
 
-  function catScore(cat, subs){
-    return subs.reduce((sum,s)=> sum + cat.subs.reduce((a,sub)=>a+ (s.scores[sub.field]||0), 0), 0);
-  }
+  return { categories, submissions, projectHeaderRaw };
+}
 
-  // simple inline plugin to draw the value at the end/top of each bar
-  const valueLabelPlugin = {
-    id: 'valueLabel',
-    afterDatasetsDraw(chart){
-      const {ctx} = chart;
-      chart.data.datasets.forEach((dataset, di)=>{
-        const meta = chart.getDatasetMeta(di);
-        meta.data.forEach((bar, i)=>{
-          const value = dataset.data[i];
-          ctx.save();
-          ctx.fillStyle = '#1B2430';
-          ctx.font = "600 12px 'IBM Plex Mono', monospace";
-          if(chart.options.indexAxis === 'y'){
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(String(value), bar.x + 8, bar.y);
-          } else {
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'bottom';
-            ctx.fillText(String(value), bar.x, bar.y - 6);
-          }
-          ctx.restore();
-        });
+function shortLabelFromHeader(raw){
+  // "ผลงานนวัตกรรม" -> "นวัตกรรม", "ผลงานวิจัย" -> "วิจัย", else use as-is
+  return raw.replace(/^ผลงาน/, '') || raw;
+}
+
+// simple inline plugin to draw the value at the end/top of each bar
+const valueLabelPlugin = {
+  id: 'valueLabel',
+  afterDatasetsDraw(chart){
+    const {ctx} = chart;
+    chart.data.datasets.forEach((dataset, di)=>{
+      const meta = chart.getDatasetMeta(di);
+      meta.data.forEach((bar, i)=>{
+        const value = dataset.data[i];
+        ctx.save();
+        ctx.fillStyle = '#1B2430';
+        ctx.font = "600 12px 'IBM Plex Mono', monospace";
+        if(chart.options.indexAxis === 'y'){
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(value), bar.x + 8, bar.y);
+        } else {
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(String(value), bar.x, bar.y - 6);
+        }
+        ctx.restore();
       });
-    }
-  };
-  Chart.register(valueLabelPlugin);
-
-  let catChartInstance = null;
-  let subChartInstance = null;
-
-  function update(selection){
-    const subs = selection === 'all' ? ALL_SUBS : [ALL_SUBS[Number(selection)]];
-    const isAll = selection === 'all';
-    const totalMax = MAXTOTAL * subs.length;
-    const totalScore = subs.reduce((a,s)=>a+s.total,0);
-
-    // hero
-    document.getElementById('heroProject').textContent = isAll
-      ? `คะแนนรวมของทุกผลงาน (${subs.length} ผลงาน)`
-      : subs[0].project;
-    document.getElementById('heroNum').textContent = totalScore;
-    document.querySelector('.hero-score .lbl').textContent = isAll ? 'คะแนนรวมทุกผลงาน' : 'คะแนนรวม';
-    const pct = totalMax>0 ? totalScore/totalMax : 0;
-    const circ = 2 * Math.PI * 80;
-    const arc = document.getElementById('heroArc');
-    arc.setAttribute('stroke-dasharray', circ);
-    arc.setAttribute('stroke-dashoffset', circ * (1 - pct));
-
-    const maxSub = ALL_SUBS.reduce((a,s)=>s.total>a.total?s:a, ALL_SUBS[0]);
-    const minSub = ALL_SUBS.reduce((a,s)=>s.total<a.total?s:a, ALL_SUBS[0]);
-    document.getElementById('statCount').textContent = ALL_SUBS.length;
-    document.getElementById('statMax').textContent = maxSub.total;
-    document.getElementById('statMin').textContent = minSub.total;
-
-    // category cards
-    const catGrid = document.getElementById('catGrid');
-    catGrid.innerHTML = '';
-    CATEGORIES.forEach(cat=>{
-      const score = catScore(cat, subs);
-      const catMax = cat.max * subs.length;
-      const pctFill = catMax>0 ? Math.round((score/catMax)*100) : 0;
-      const div = document.createElement('div');
-      div.className = 'cat-card';
-      div.innerHTML = `
-        <div class="name">${cat.name}</div>
-        <div class="score-row"><span class="val">${score}</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${pctFill}%"></div></div>
-      `;
-      catGrid.appendChild(div);
-    });
-
-    // category chart
-    if(catChartInstance) catChartInstance.destroy();
-    catChartInstance = new Chart(document.getElementById('catChart'), {
-      type:'bar',
-      data:{
-        labels: CATEGORIES.map(c=>c.name.length>28? c.name.slice(0,28)+'…' : c.name),
-        datasets:[
-          { label:'คะแนนที่ได้', data: CATEGORIES.map(c=>catScore(c, subs)), backgroundColor:'#2C5F8A', borderRadius:2, barPercentage:0.5 }
-        ]
-      },
-      options:{
-        responsive:true,
-        layout:{ padding:{ top:22 } },
-        plugins:{ legend:{display:false}, tooltip:{ titleFont:{family:"'IBM Plex Sans Thai'"}, bodyFont:{family:"'IBM Plex Sans Thai'"} } },
-        scales:{
-          x:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11}} },
-          y:{ beginAtZero:true, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}} }
-        }
-      }
-    });
-
-    // sub-criteria chart
-    const allSubs = CATEGORIES.flatMap(c=>c.subs.map(s=>({...s, cat:c.name})));
-    if(subChartInstance) subChartInstance.destroy();
-    subChartInstance = new Chart(document.getElementById('subChart'), {
-      type:'bar',
-      data:{
-        labels: allSubs.map(s=>s.name),
-        datasets:[{
-          label:'คะแนนที่ได้',
-          data: allSubs.map(s=> subs.reduce((a,sub)=>a+(sub.scores[s.field]||0),0) ),
-          backgroundColor:'#C98A3E',
-          borderRadius:2,
-          barPercentage:0.6
-        }]
-      },
-      options:{
-        indexAxis:'y',
-        responsive:true,
-        layout:{ padding:{ right:30 } },
-        plugins:{ legend:{display:false} },
-        scales:{
-          x:{ beginAtZero:true, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}} },
-          y:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11.5}} }
-        }
-      }
     });
   }
+};
+Chart.register(valueLabelPlugin);
 
-  viewSelect.addEventListener('change', e => update(e.target.value));
-  update('all');
+let catChartInstance = null;
+let subChartInstance = null;
+let SHEETS = []; // { label, categories, submissions }
 
-  // submissions list — always shown individually, with raw (unaveraged) scores
+function catScore(cat, subs){
+  return subs.reduce((sum,s)=> sum + cat.subs.reduce((a,sub)=>a+(s.scores[sub.colIndex]||0),0), 0);
+}
+
+function renderView(sheet, selection){
+  const ALL_SUBS = sheet.submissions;
+  const CATEGORIES = sheet.categories;
+  const MAXTOTAL = CATEGORIES.reduce((a,c)=>a+c.max,0);
+
+  const subs = selection === 'all' ? ALL_SUBS : [ALL_SUBS[Number(selection)]];
+  const isAll = selection === 'all';
+  const totalMax = MAXTOTAL * subs.length;
+  const totalScore = subs.reduce((a,s)=>a+s.total,0);
+
+  document.getElementById('heroProject').textContent = isAll
+    ? `คะแนนรวมของทุกผลงานในชุดนี้ (${subs.length} ผลงาน)`
+    : subs[0].project;
+  document.getElementById('heroNum').textContent = totalScore;
+  document.getElementById('heroLbl').textContent = isAll ? 'คะแนนรวมทุกผลงาน' : 'คะแนนรวม';
+  const pct = totalMax>0 ? totalScore/totalMax : 0;
+  const circ = 2 * Math.PI * 80;
+  const arc = document.getElementById('heroArc');
+  arc.setAttribute('stroke-dasharray', circ);
+  arc.setAttribute('stroke-dashoffset', circ * (1 - pct));
+
+  const maxSub = ALL_SUBS.reduce((a,s)=>s.total>a.total?s:a, ALL_SUBS[0]);
+  const minSub = ALL_SUBS.reduce((a,s)=>s.total<a.total?s:a, ALL_SUBS[0]);
+  document.getElementById('metaCount').textContent = ALL_SUBS.length + ' ผลงาน';
+  document.getElementById('statCount').textContent = ALL_SUBS.length;
+  document.getElementById('statMax').textContent = maxSub.total;
+  document.getElementById('statMin').textContent = minSub.total;
+  document.getElementById('metaTime').textContent = ALL_SUBS[ALL_SUBS.length-1].timestamp;
+
+  const catGrid = document.getElementById('catGrid');
+  catGrid.innerHTML = '';
+  CATEGORIES.forEach(cat=>{
+    const score = catScore(cat, subs);
+    const catMax = cat.max * subs.length;
+    const pctFill = catMax>0 ? Math.round((score/catMax)*100) : 0;
+    const div = document.createElement('div');
+    div.className = 'cat-card';
+    div.innerHTML = `
+      <div class="name">${cat.name}</div>
+      <div class="score-row"><span class="val">${score}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pctFill}%"></div></div>
+    `;
+    catGrid.appendChild(div);
+  });
+
+  if(catChartInstance) catChartInstance.destroy();
+  catChartInstance = new Chart(document.getElementById('catChart'), {
+    type:'bar',
+    data:{
+      labels: CATEGORIES.map(c=>c.name.length>30? c.name.slice(0,30)+'…' : c.name),
+      datasets:[
+        { label:'คะแนนที่ได้', data: CATEGORIES.map(c=>catScore(c, subs)), backgroundColor:'#2C5F8A', borderRadius:2, barPercentage:0.5 }
+      ]
+    },
+    options:{
+      responsive:true,
+      layout:{ padding:{ top:22 } },
+      plugins:{ legend:{display:false}, tooltip:{ titleFont:{family:"'IBM Plex Sans Thai'"}, bodyFont:{family:"'IBM Plex Sans Thai'"} } },
+      scales:{
+        x:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11}} },
+        y:{ beginAtZero:true, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}} }
+      }
+    }
+  });
+
+  const allSubs = CATEGORIES.flatMap(c=>c.subs.map(s=>({...s, cat:c.name})));
+  if(subChartInstance) subChartInstance.destroy();
+  subChartInstance = new Chart(document.getElementById('subChart'), {
+    type:'bar',
+    data:{
+      labels: allSubs.map(s=>s.name.length>60? s.name.slice(0,60)+'…' : s.name),
+      datasets:[{
+        label:'คะแนนที่ได้',
+        data: allSubs.map(s=> subs.reduce((a,sub)=>a+(sub.scores[s.colIndex]||0),0) ),
+        backgroundColor:'#C98A3E',
+        borderRadius:2,
+        barPercentage:0.6
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      layout:{ padding:{ right:30 } },
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ beginAtZero:true, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}} },
+        y:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11} } }
+      }
+    }
+  });
+
   const list = document.getElementById('submissionList');
+  list.innerHTML = '';
   ALL_SUBS.forEach(s=>{
     const div = document.createElement('div');
     div.className = 'submission';
     const miniRows = CATEGORIES.map(cat=>{
-      const val = cat.subs.reduce((a,sub)=>a+(s.scores[sub.field]||0),0);
-      return `<div class="mini-row"><span>${cat.name.slice(0,18)}…</span><span>${val}</span></div>`;
+      const val = cat.subs.reduce((a,sub)=>a+(s.scores[sub.colIndex]||0),0);
+      return `<div class="mini-row"><span>${cat.name.slice(0,22)}…</span><span>${val}</span></div>`;
     }).join('');
     div.innerHTML = `
       <div class="submission-main">
@@ -446,22 +451,78 @@ function renderDashboard(ALL_SUBS){
   });
 }
 
-// ---- Load live data from the published sheet CSV ----
-fetch(CSV_URL)
-  .then(r=>{ if(!r.ok) throw new Error('fetch failed'); return r.text(); })
-  .then(csvText=>{
-    const parsed = Papa.parse(csvText.trim(), { skipEmptyLines:true }).data;
-    const rows = parsed.slice(1).filter(r => r[1] && r[1].trim()); // skip header, require email present
-    const submissions = rows.map(rowToSubmission);
-    if(submissions.length === 0) throw new Error('no rows');
-    renderDashboard(submissions);
-  })
-  .catch(err=>{
-    document.getElementById('loadingMsg').textContent = 'โหลดข้อมูลสดจากชีตไม่สำเร็จ กำลังแสดงข้อมูลชุดล่าสุดที่บันทึกไว้แทน';
-    renderDashboard([
-      rowToSubmission(['14/9/2026, 10:12:48','waraporn.yah@nmu.ac.th','อุปกรณ์ประคบร้อนด้วยไฟฟ้า','7','7','7','7','7','7','7','8','8','8','','73'])
-    ]);
+function populateViewSelect(sheet){
+  const viewSelect = document.getElementById('viewSelect');
+  viewSelect.innerHTML = '';
+  const optAll = document.createElement('option');
+  optAll.value = 'all';
+  optAll.textContent = `ภาพรวมทั้งหมด (รวม ${sheet.submissions.length} ผลงาน)`;
+  viewSelect.appendChild(optAll);
+  sheet.submissions.forEach((s,i)=>{
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = `${s.project} — ${s.email}`;
+    viewSelect.appendChild(opt);
   });
+}
+
+function selectSheet(sheetIdx){
+  const sheet = SHEETS[sheetIdx];
+  populateViewSelect(sheet);
+  renderView(sheet, 'all');
+}
+
+function initSheetSelector(){
+  const sheetSelect = document.getElementById('sheetSelect');
+  sheetSelect.innerHTML = '';
+  SHEETS.forEach((sheet, i)=>{
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = sheet.label;
+    sheetSelect.appendChild(opt);
+  });
+  document.getElementById('metaSheetCount').textContent = SHEETS.length;
+
+  sheetSelect.addEventListener('change', e => selectSheet(Number(e.target.value)));
+  document.getElementById('viewSelect').addEventListener('change', e=>{
+    const sheetIdx = Number(sheetSelect.value);
+    renderView(SHEETS[sheetIdx], e.target.value);
+  });
+
+  selectSheet(0);
+}
+
+// ---- Load every sheet, then build the selector ----
+Promise.allSettled(
+  SHEET_SOURCES.map(src => fetch(src.url).then(r=>{ if(!r.ok) throw new Error('http '+r.status); return r.text(); }))
+).then(results=>{
+  const typeCounts = {};
+  results.forEach((res, i)=>{
+    if(res.status !== 'fulfilled') return;
+    try{
+      const { categories, submissions, projectHeaderRaw } = parseSheetCsv(res.value);
+      if(submissions.length === 0) return;
+      const shortType = shortLabelFromHeader(projectHeaderRaw);
+      typeCounts[shortType] = (typeCounts[shortType]||0) + 1;
+      const n = typeCounts[shortType];
+      const label = n > 1 ? `${shortType} (ชุดที่ ${n})` : shortType;
+      SHEETS.push({ label, categories, submissions });
+    }catch(e){ /* skip sheet that fails to parse */ }
+  });
+
+  const failedCount = results.filter(r=>r.status!=='fulfilled').length;
+  const statusEl = document.getElementById('statusMsg');
+  if(SHEETS.length === 0){
+    statusEl.textContent = 'โหลดข้อมูลไม่สำเร็จทุกชุด กรุณาตรวจสอบว่าลิงก์เผยแพร่แบบสาธารณะ (Publish to web) แล้ว';
+    return;
+  }
+  statusEl.style.display = failedCount ? 'block' : 'none';
+  if(failedCount) statusEl.textContent = `โหลดสำเร็จ ${SHEETS.length} ชุด, โหลดไม่สำเร็จ ${failedCount} ชุด (อาจไม่ได้เผยแพร่แบบสาธารณะ)`;
+
+  initSheetSelector();
+}).catch(()=>{
+  document.getElementById('statusMsg').textContent = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
+});
 </script>
 </body>
 </html>
