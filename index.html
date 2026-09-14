@@ -242,10 +242,10 @@
 <script>
 // ---- Sources: every published-CSV sheet to combine on this page ----
 const SHEET_SOURCES = [
-  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTyd30y2diczXigFWRIToeLibIuVzdkDRpDWCo0BtBgmIr9afnVilDrqNgGltDTJMoMKUh4hchpexAY/pub?output=csv" },
-  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOgYBQm3v8ypjtnL7_uB8whaefyA_H_7YAZyNvfoM0V0rGXpCCJcWi0R6kdIZzLY0nKYI74wsJW9bt/pub?output=csv" },
-  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ34ZLev-CSpRyCe6ycnIjOq_ipXEp5sQwGxBkrn-_FcDKnBNNRIngcpO75bgHfktWTmg5Y7Gmzbjw7/pub?output=csv" },
-  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRccbUmPjZEwGdDBz6jgYiBvbYvCt3D3JXISQscseuzd96q7bOOt8fAlnjNRKnxf1DfbkY4eaeacGp0/pub?output=csv" },
+  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTyd30y2diczXigFWRIToeLibIuVzdkDRpDWCo0BtBgmIr9afnVilDrqNgGltDTJMoMKUh4hchpexAY/pub?output=csv", label: "นวัตกรรม" },
+  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOgYBQm3v8ypjtnL7_uB8whaefyA_H_7YAZyNvfoM0V0rGXpCCJcWi0R6kdIZzLY0nKYI74wsJW9bt/pub?output=csv", label: "วิจัย Track 1 Group 1" },
+  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ34ZLev-CSpRyCe6ycnIjOq_ipXEp5sQwGxBkrn-_FcDKnBNNRIngcpO75bgHfktWTmg5Y7Gmzbjw7/pub?output=csv", label: "วิจัย Track 1 Group 2" },
+  { url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRccbUmPjZEwGdDBz6jgYiBvbYvCt3D3JXISQscseuzd96q7bOOt8fAlnjNRKnxf1DfbkY4eaeacGp0/pub?output=csv", label: "วิจัย Track 2 Group 1" },
 ];
 
 // ---- Generic CSV -> rubric parser (works for any "หัวข้อ (X คะแนน) [ย่อย (Y คะแนน)]" header shape) ----
@@ -502,10 +502,13 @@ Promise.allSettled(
     try{
       const { categories, submissions, projectHeaderRaw } = parseSheetCsv(res.value);
       if(submissions.length === 0) return;
-      const shortType = shortLabelFromHeader(projectHeaderRaw);
-      typeCounts[shortType] = (typeCounts[shortType]||0) + 1;
-      const n = typeCounts[shortType];
-      const label = n > 1 ? `${shortType} (ชุดที่ ${n})` : shortType;
+      let label = SHEET_SOURCES[i].label;
+      if(!label){
+        const shortType = shortLabelFromHeader(projectHeaderRaw);
+        typeCounts[shortType] = (typeCounts[shortType]||0) + 1;
+        const n = typeCounts[shortType];
+        label = n > 1 ? `${shortType} (ชุดที่ ${n})` : shortType;
+      }
       SHEETS.push({ label, categories, submissions });
     }catch(e){ /* skip sheet that fails to parse */ }
   });
