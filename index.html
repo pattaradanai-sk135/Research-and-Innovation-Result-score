@@ -359,7 +359,8 @@ function renderView(sheet, selection){
 
   const catGrid = document.getElementById('catGrid');
   catGrid.innerHTML = '';
-  CATEGORIES.forEach(cat=>{
+  const sortedCats = [...CATEGORIES].sort((a,b)=> catScore(b, subs) - catScore(a, subs));
+  sortedCats.forEach(cat=>{
     const score = catScore(cat, subs);
     const catMax = cat.max * subs.length;
     const pctFill = catMax>0 ? Math.round((score/catMax)*100) : 0;
@@ -385,7 +386,9 @@ function renderView(sheet, selection){
     </div>
   `).join('');
 
-  const allSubs = CATEGORIES.flatMap(c=>c.subs.map(s=>({...s, cat:c.name})));
+  const allSubs = CATEGORIES.flatMap(c=>c.subs.map(s=>({...s, cat:c.name})))
+    .map(s=>({ ...s, value: subs.reduce((a,sub)=>a+(sub.scores[s.colIndex]||0),0) }))
+    .sort((a,b)=> b.value - a.value);
 
   if(catChartInstance) catChartInstance.destroy();
   catChartInstance = new Chart(document.getElementById('catChart'), {
@@ -394,7 +397,7 @@ function renderView(sheet, selection){
       labels: allSubs.map(s=>s.name.length>55? s.name.slice(0,55)+'…' : s.name),
       datasets:[{
         label:'คะแนนที่ได้',
-        data: allSubs.map(s=> subs.reduce((a,sub)=>a+(sub.scores[s.colIndex]||0),0) ),
+        data: allSubs.map(s=>s.value),
         backgroundColor: allSubs.map(s=>catColorOf(s.cat)),
         borderRadius:2,
         barPercentage:0.65
@@ -420,7 +423,8 @@ function renderView(sheet, selection){
 
   const list = document.getElementById('submissionList');
   list.innerHTML = '';
-  ALL_SUBS.forEach(s=>{
+  const sortedSubs = [...ALL_SUBS].sort((a,b)=> b.total - a.total);
+  sortedSubs.forEach(s=>{
     const div = document.createElement('div');
     div.className = 'submission';
     const miniRows = CATEGORIES.map(cat=>{
