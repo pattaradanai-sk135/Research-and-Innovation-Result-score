@@ -127,8 +127,7 @@
   .bar-track{height:6px; background:var(--paper); border:1px solid var(--line); margin-top:12px; overflow:hidden;}
   .bar-fill{height:100%; background:var(--blue);}
 
-  .chart-panel{background:var(--card); border:1px solid var(--line); padding:26px; margin-top:20px;}
-  .chart-panel canvas{max-height:360px;}
+  .chart-panel{background:var(--card); border:1px solid var(--line); padding:28px 30px; margin-top:20px;}
 
   /* Submissions */
   .submission{
@@ -197,8 +196,10 @@
 
   <div class="hero">
     <div class="hero-score">
-      <canvas id="heroDonut" width="190" height="190" style="max-width:190px; max-height:190px;"></canvas>
-      <div class="num" id="heroNum" style="margin-top:14px; text-align:center;">-</div>
+      <div style="position:relative; width:170px; height:170px;">
+        <canvas id="heroDonut" width="170" height="170"></canvas>
+      </div>
+      <div class="num" id="heroNum" style="margin-top:16px; text-align:center;">-</div>
       <div class="lbl" id="heroLbl">คะแนนรวม</div>
     </div>
     <div class="hero-body">
@@ -218,7 +219,9 @@
     <div class="cat-grid" id="catGrid"></div>
     <div class="chart-panel">
       <div id="catLegend" style="display:flex; flex-wrap:wrap; gap:16px; margin-bottom:16px;"></div>
-      <canvas id="catChart"></canvas>
+      <div id="catChartWrap" style="position:relative; width:100%;">
+        <canvas id="catChart"></canvas>
+      </div>
     </div>
   </section>
 
@@ -409,7 +412,7 @@ function renderView(sheet, selection){
     },
     options:{
       responsive:true,
-      maintainAspectRatio:true,
+      maintainAspectRatio:false,
       cutout:'62%',
       plugins:{
         legend:{ display:false },
@@ -458,33 +461,39 @@ function renderView(sheet, selection){
   });
 
   if(catChartInstance) catChartInstance.destroy();
+  const chartWrap = document.getElementById('catChartWrap');
+  const rowHeight = subs.length > 1 ? 50 : 34;
+  chartWrap.style.height = Math.max(380, allSubItems.length * rowHeight + 60) + 'px';
+
   catChartInstance = new Chart(document.getElementById('catChart'), {
     type:'bar',
     data:{
-      labels: allSubItems.map(s=>s.name.length>55? s.name.slice(0,55)+'…' : s.name),
+      labels: allSubItems.map(s=>s.name.length>60? s.name.slice(0,60)+'…' : s.name),
       datasets: subs.map((project)=>({
         label: project.project,
         data: allSubItems.map(s=> project.scores[s.colIndex]||0),
         backgroundColor: projectColorMap.get(project.project),
-        borderRadius:2,
-        barPercentage: subs.length > 1 ? 0.8 : 0.65,
-        categoryPercentage: 0.8
+        borderRadius:3,
+        barPercentage: subs.length > 1 ? 0.82 : 0.68,
+        categoryPercentage: 0.82
       }))
     },
     options:{
       indexAxis:'y',
       responsive:true,
-      layout:{ padding:{ right:34 } },
+      maintainAspectRatio:false,
+      layout:{ padding:{ right:40, top:6, bottom:6 } },
       plugins:{
-        legend:{ display: subs.length > 1, position:'top', labels:{ font:{family:"'IBM Plex Sans Thai'"}, boxWidth:12 } },
+        legend:{ display: subs.length > 1, position:'top', align:'start', labels:{ font:{family:"'IBM Plex Sans Thai'", size:13}, boxWidth:13, padding:16 } },
         tooltip:{
-          titleFont:{family:"'IBM Plex Sans Thai'"}, bodyFont:{family:"'IBM Plex Sans Thai'"},
+          titleFont:{family:"'IBM Plex Sans Thai'", size:13}, bodyFont:{family:"'IBM Plex Sans Thai'", size:12.5},
+          padding:10,
           callbacks:{ afterLabel: (ctx)=> allSubItems[ctx.dataIndex].cat }
         }
       },
       scales:{
-        x:{ beginAtZero:true, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}} },
-        y:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11}} }
+        x:{ beginAtZero:true, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:12}} },
+        y:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:12.5}, padding:8} }
       }
     }
   });
