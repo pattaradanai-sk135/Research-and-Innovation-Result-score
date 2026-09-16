@@ -287,6 +287,38 @@ function parseSheetCsv(csvText){
   return { categories, submissions, projectHeaderRaw };
 }
 
+// group evaluator rows that scored the same project into one combined record,
+// so scores across raters are summed and then broken down by category
+function groupByProject(submissions){
+  const order = [];
+  const map = new Map();
+  submissions.forEach(s=>{
+    const key = s.project || '(ไม่ระบุชื่อผลงาน)';
+    if(!map.has(key)){
+      map.set(key, { project: key, scores:{}, total:0, emails:[], feedbacks:[], timestamps:[] });
+      order.push(key);
+    }
+    const g = map.get(key);
+    Object.entries(s.scores).forEach(([colIdx,val])=>{ g.scores[colIdx] = (g.scores[colIdx]||0) + val; });
+    g.total += s.total;
+    g.emails.push(s.email);
+    if(s.feedback) g.feedbacks.push({ email: s.email, text: s.feedback });
+    g.timestamps.push(s.timestamp);
+  });
+  return order.map(key=>{
+    const g = map.get(key);
+    return {
+      project: g.project,
+      email: g.emails.join(', '),
+      scores: g.scores,
+      total: g.total,
+      feedbacks: g.feedbacks,
+      timestamp: g.timestamps[g.timestamps.length-1],
+      raterCount: g.emails.length
+    };
+  });
+}
+
 function shortLabelFromHeader(raw){
   // "ผลงานนวัตกรรม" -> "นวัตกรรม", "ผลงานวิจัย" -> "วิจัย", else use as-is
   return raw.replace(/^ผลงาน/, '') || raw;
@@ -427,12 +459,15 @@ function renderView(sheet, selection){
       const val = cat.subs.reduce((a,sub)=>a+(s.scores[sub.colIndex]||0),0);
       return `<div class="mini-row"><span>${cat.name.slice(0,22)}…</span><span>${val}</span></div>`;
     }).join('');
+    const feedbackHtml = (s.feedbacks && s.feedbacks.length)
+      ? s.feedbacks.map(f=>`<div style="margin-top:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft);">${f.email}</span><div>${f.text}</div></div>`).join('')
+      : '<div class="feedback-text empty">ไม่มีข้อเสนอแนะเพิ่มเติมจากผู้ประเมิน</div>';
     div.innerHTML = `
       <div class="submission-main">
         <div class="proj">${s.project}</div>
-        <div class="email">${s.email} · ${s.timestamp}</div>
+        <div class="email">${s.raterCount > 1 ? `ผู้ประเมิน ${s.raterCount} คน · ` : ''}${s.email} · ${s.timestamp}</div>
         <div class="feedback-lbl">ข้อเสนอแนะ</div>
-        <div class="feedback-text ${s.feedback ? '' : 'empty'}">${s.feedback ? s.feedback : 'ไม่มีข้อเสนอแนะเพิ่มเติมจากผู้ประเมิน'}</div>
+        ${feedbackHtml}
       </div>
       <div class="submission-side">
         <div class="total">${s.total}</div>
@@ -454,7 +489,7 @@ function populateViewSelect(sheet){
   sheet.submissions.forEach((s,i)=>{
     const opt = document.createElement('option');
     opt.value = String(i);
-    opt.textContent = `${s.project} — ${s.email}`;
+    opt.textContent = s.raterCount > 1 ? `${s.project} (รวม ${s.raterCount} คน)` : `${s.project} — ${s.email}`;
     viewSelect.appendChild(opt);
   });
 }
@@ -495,6 +530,7 @@ Promise.allSettled(
     try{
       const { categories, submissions, projectHeaderRaw } = parseSheetCsv(res.value);
       if(submissions.length === 0) return;
+      const groupedSubmissions = groupByProject(submissions);
       let label = SHEET_SOURCES[i].label;
       if(!label){
         const shortType = shortLabelFromHeader(projectHeaderRaw);
@@ -502,7 +538,7 @@ Promise.allSettled(
         const n = typeCounts[shortType];
         label = n > 1 ? `${shortType} (ชุดที่ ${n})` : shortType;
       }
-      SHEETS.push({ label, categories, submissions });
+      SHEETS.push({ label, categories, submissions: groupedSubmissions });
     }catch(e){ /* skip sheet that fails to parse */ }
   });
 
