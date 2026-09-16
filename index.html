@@ -406,57 +406,43 @@ function renderView(sheet, selection){
     catGrid.appendChild(div);
   });
 
-  const CAT_COLORS = ['#2C5F8A', '#C98A3E', '#4C7A5E', '#8B4B6B', '#5C6BC0', '#B0704A'];
-  const catColorOf = (catName) => CAT_COLORS[CATEGORIES.findIndex(c=>c.name===catName) % CAT_COLORS.length];
-
-  // legend
+  // legend for the categories grid — colors now correspond to projects when comparing multiple
   const legendEl = document.getElementById('catLegend');
-  legendEl.innerHTML = CATEGORIES.map((c,i)=>`
-    <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-soft); font-family:'IBM Plex Sans Thai';">
-      <span style="width:11px; height:11px; background:${CAT_COLORS[i % CAT_COLORS.length]}; display:inline-block; border-radius:2px;"></span>
-      ${c.name}
-    </div>
-  `).join('');
+  legendEl.innerHTML = '';
 
-  const allSubs = CATEGORIES.flatMap(c=>c.subs.map(s=>({...s, cat:c.name})))
-    .map(s=>({
-      ...s,
-      value: subs.reduce((a,sub)=>a+(sub.scores[s.colIndex]||0),0),
-      byProject: subs.map(sub=>({ project: sub.project, value: sub.scores[s.colIndex]||0 }))
-    }))
-    .sort((a,b)=> b.value - a.value);
+  const PROJECT_COLORS = ['#2C5F8A', '#C98A3E', '#4C7A5E', '#8B4B6B', '#5C6BC0', '#B0704A', '#3D8C88', '#A8763E'];
+
+  const allSubItems = CATEGORIES.flatMap(c=>c.subs.map(s=>({...s, cat:c.name})));
+  // sort sub-items by their combined score across the shown projects, high to low
+  allSubItems.sort((a,b)=>{
+    const av = subs.reduce((sum,sub)=>sum+(sub.scores[a.colIndex]||0),0);
+    const bv = subs.reduce((sum,sub)=>sum+(sub.scores[b.colIndex]||0),0);
+    return bv - av;
+  });
 
   if(catChartInstance) catChartInstance.destroy();
   catChartInstance = new Chart(document.getElementById('catChart'), {
     type:'bar',
     data:{
-      labels: allSubs.map(s=>s.name.length>55? s.name.slice(0,55)+'…' : s.name),
-      datasets:[{
-        label:'คะแนนที่ได้',
-        data: allSubs.map(s=>s.value),
-        backgroundColor: allSubs.map(s=>catColorOf(s.cat)),
+      labels: allSubItems.map(s=>s.name.length>55? s.name.slice(0,55)+'…' : s.name),
+      datasets: subs.map((project, i)=>({
+        label: project.project,
+        data: allSubItems.map(s=> project.scores[s.colIndex]||0),
+        backgroundColor: PROJECT_COLORS[i % PROJECT_COLORS.length],
         borderRadius:2,
-        barPercentage:0.65
-      }]
+        barPercentage: subs.length > 1 ? 0.8 : 0.65,
+        categoryPercentage: 0.8
+      }))
     },
     options:{
       indexAxis:'y',
       responsive:true,
       layout:{ padding:{ right:34 } },
       plugins:{
-        legend:{ display:false },
+        legend:{ display: subs.length > 1, position:'top', labels:{ font:{family:"'IBM Plex Sans Thai'"}, boxWidth:12 } },
         tooltip:{
           titleFont:{family:"'IBM Plex Sans Thai'"}, bodyFont:{family:"'IBM Plex Sans Thai'"},
-          callbacks:{
-            afterLabel: (ctx)=> allSubs[ctx.dataIndex].cat,
-            afterBody: (items)=>{
-              const d = allSubs[items[0].dataIndex];
-              if(d.byProject.length <= 1) return [];
-              return d.byProject
-                .sort((a,b)=>b.value-a.value)
-                .map(p=>`${p.project}: ${p.value}`);
-            }
-          }
+          callbacks:{ afterLabel: (ctx)=> allSubItems[ctx.dataIndex].cat }
         }
       },
       scales:{
