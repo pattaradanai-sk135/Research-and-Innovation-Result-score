@@ -332,6 +332,7 @@ function shortLabelFromHeader(raw){
 const valueLabelPlugin = {
   id: 'valueLabel',
   afterDatasetsDraw(chart){
+    if(chart.config.type !== 'bar') return; // only label bar charts — doughnut arcs share center coords and would overlap
     const {ctx} = chart;
     chart.data.datasets.forEach((dataset, di)=>{
       const meta = chart.getDatasetMeta(di);
