@@ -419,7 +419,11 @@ function renderView(sheet, selection){
   `).join('');
 
   const allSubs = CATEGORIES.flatMap(c=>c.subs.map(s=>({...s, cat:c.name})))
-    .map(s=>({ ...s, value: subs.reduce((a,sub)=>a+(sub.scores[s.colIndex]||0),0) }))
+    .map(s=>({
+      ...s,
+      value: subs.reduce((a,sub)=>a+(sub.scores[s.colIndex]||0),0),
+      byProject: subs.map(sub=>({ project: sub.project, value: sub.scores[s.colIndex]||0 }))
+    }))
     .sort((a,b)=> b.value - a.value);
 
   if(catChartInstance) catChartInstance.destroy();
@@ -443,7 +447,16 @@ function renderView(sheet, selection){
         legend:{ display:false },
         tooltip:{
           titleFont:{family:"'IBM Plex Sans Thai'"}, bodyFont:{family:"'IBM Plex Sans Thai'"},
-          callbacks:{ afterLabel: (ctx)=> allSubs[ctx.dataIndex].cat }
+          callbacks:{
+            afterLabel: (ctx)=> allSubs[ctx.dataIndex].cat,
+            afterBody: (items)=>{
+              const d = allSubs[items[0].dataIndex];
+              if(d.byProject.length <= 1) return [];
+              return d.byProject
+                .sort((a,b)=>b.value-a.value)
+                .map(p=>`${p.project}: ${p.value}`);
+            }
+          }
         }
       },
       scales:{
