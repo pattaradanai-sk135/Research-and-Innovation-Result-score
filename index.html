@@ -271,6 +271,7 @@ function parseSheetCsv(csvText){
   const categories = catOrder.map(name => catMap[name]);
 
   const feedbackIdx = header.findIndex(h => (h||'').trim() === 'ข้อเสนอแนะ');
+  const judgeIdx = header.findIndex(h => (h||'').trim() === 'กรรมการ');
   const totalIdx = header.findIndex(h => (h||'').trim() === 'คะแนนรวม');
   const projectHeaderRaw = (header[2] || 'ผลงาน').trim();
 
@@ -281,6 +282,7 @@ function parseSheetCsv(csvText){
     return {
       timestamp: (row[0]||'').trim(),
       email: (row[1]||'').trim(),
+      judge: judgeIdx >= 0 ? (row[judgeIdx]||'').trim() : '',
       project: (row[2]||'').trim(),
       scores,
       feedback: (row[feedbackIdx]||'').trim(),
@@ -299,26 +301,27 @@ function groupByProject(submissions){
   submissions.forEach(s=>{
     const key = s.project || '(ไม่ระบุชื่อผลงาน)';
     if(!map.has(key)){
-      map.set(key, { project: key, scores:{}, total:0, emails:[], feedbacks:[], timestamps:[] });
+      map.set(key, { project: key, scores:{}, total:0, judges:[], feedbacks:[], timestamps:[] });
       order.push(key);
     }
     const g = map.get(key);
     Object.entries(s.scores).forEach(([colIdx,val])=>{ g.scores[colIdx] = (g.scores[colIdx]||0) + val; });
     g.total += s.total;
-    g.emails.push(s.email);
-    if(s.feedback) g.feedbacks.push({ email: s.email, text: s.feedback });
+    const judgeName = s.judge || s.email || 'ไม่ระบุกรรมการ';
+    g.judges.push(judgeName);
+    if(s.feedback) g.feedbacks.push({ judge: judgeName, text: s.feedback });
     g.timestamps.push(s.timestamp);
   });
   return order.map(key=>{
     const g = map.get(key);
     return {
       project: g.project,
-      email: g.emails.join(', '),
+      judges: g.judges,
       scores: g.scores,
       total: g.total,
       feedbacks: g.feedbacks,
       timestamp: g.timestamps[g.timestamps.length-1],
-      raterCount: g.emails.length
+      raterCount: g.judges.length
     };
   });
 }
@@ -510,12 +513,12 @@ function renderView(sheet, selection){
       return `<div class="mini-row"><span>${cat.name.slice(0,22)}…</span><span>${val}</span></div>`;
     }).join('');
     const feedbackHtml = (s.feedbacks && s.feedbacks.length)
-      ? s.feedbacks.map(f=>`<div style="margin-top:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft);">${f.email}</span><div>${f.text}</div></div>`).join('')
+      ? s.feedbacks.map(f=>`<div style="margin-top:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft);">${f.judge}</span><div>${f.text}</div></div>`).join('')
       : '<div class="feedback-text empty">ไม่มีข้อเสนอแนะเพิ่มเติมจากผู้ประเมิน</div>';
     div.innerHTML = `
       <div class="submission-main">
         <div class="proj">${s.project}</div>
-        <div class="email">${s.raterCount > 1 ? `ผู้ประเมิน ${s.raterCount} คน · ` : ''}${s.email} · ${s.timestamp}</div>
+        <div class="email">กรรมการผู้ให้คะแนน: ${s.judges.join(', ')} · ${s.timestamp}</div>
         <div class="feedback-lbl">ข้อเสนอแนะ</div>
         ${feedbackHtml}
       </div>
@@ -539,7 +542,7 @@ function populateViewSelect(sheet){
   sheet.submissions.forEach((s,i)=>{
     const opt = document.createElement('option');
     opt.value = String(i);
-    opt.textContent = s.raterCount > 1 ? `${s.project} (รวม ${s.raterCount} คน)` : `${s.project} — ${s.email}`;
+    opt.textContent = s.raterCount > 1 ? `${s.project} (รวม ${s.raterCount} คน)` : `${s.project} — ${s.judges[0]}`;
     viewSelect.appendChild(opt);
   });
 }
