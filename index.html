@@ -386,21 +386,20 @@ function renderView(sheet, selection){
     </div>
   `).join('');
 
-  const allSubs = CATEGORIES.flatMap(c=>c.subs.map(s=>({...s, cat:c.name})))
-    .map(s=>({ ...s, value: subs.reduce((a,sub)=>a+(sub.scores[s.colIndex]||0),0) }))
+  const catData = CATEGORIES.map((c,i)=>({ name:c.name, value: catScore(c, subs), color: CAT_COLORS[i % CAT_COLORS.length] }))
     .sort((a,b)=> b.value - a.value);
 
   if(catChartInstance) catChartInstance.destroy();
   catChartInstance = new Chart(document.getElementById('catChart'), {
     type:'bar',
     data:{
-      labels: allSubs.map(s=>s.name.length>55? s.name.slice(0,55)+'…' : s.name),
+      labels: catData.map(c=>c.name.length>55? c.name.slice(0,55)+'…' : c.name),
       datasets:[{
         label:'คะแนนที่ได้',
-        data: allSubs.map(s=>s.value),
-        backgroundColor: allSubs.map(s=>catColorOf(s.cat)),
+        data: catData.map(c=>c.value),
+        backgroundColor: catData.map(c=>c.color),
         borderRadius:2,
-        barPercentage:0.65
+        barPercentage:0.6
       }]
     },
     options:{
@@ -409,14 +408,11 @@ function renderView(sheet, selection){
       layout:{ padding:{ right:34 } },
       plugins:{
         legend:{ display:false },
-        tooltip:{
-          titleFont:{family:"'IBM Plex Sans Thai'"}, bodyFont:{family:"'IBM Plex Sans Thai'"},
-          callbacks:{ afterLabel: (ctx)=> allSubs[ctx.dataIndex].cat }
-        }
+        tooltip:{ titleFont:{family:"'IBM Plex Sans Thai'"}, bodyFont:{family:"'IBM Plex Sans Thai'"} }
       },
       scales:{
         x:{ beginAtZero:true, grid:{color:'#EFEAE0'}, ticks:{font:{family:"'IBM Plex Mono'", size:11}} },
-        y:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11}} }
+        y:{ grid:{display:false}, ticks:{font:{family:"'IBM Plex Sans Thai'", size:11.5}} }
       }
     }
   });
