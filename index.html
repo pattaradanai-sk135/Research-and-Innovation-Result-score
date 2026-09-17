@@ -254,7 +254,7 @@ function parseSheetCsv(csvText){
 
   const catMap = {};
   const catOrder = [];
-  const headerRe = /^(.*?)\s*\((\d+)\s*คะแนน\)\s*\[(.*?)\s*\((\d+)\s*คะแนน\)\]/s;
+  const headerRe = /^(.*?)\s*\((\d+)\s*คะแนน\)\s*\[(.*?)\s*\((\d+)\s*คะแนน\)\s*\]/s;
 
   header.forEach((h, idx)=>{
     const clean = (h||'').replace(/\s+/g,' ').trim();
